@@ -2,14 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including Playwright browser deps)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies (deploy subset — no Playwright)
-COPY requirements-deploy.txt .
-RUN pip install --no-cache-dir -r requirements-deploy.txt
+# Install all Python dependencies (including Playwright for remote scraping)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright Chromium browser
+RUN playwright install --with-deps chromium
 
 # Pre-download the embedding model so it's baked into the image
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"

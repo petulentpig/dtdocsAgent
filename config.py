@@ -13,6 +13,7 @@ CHROMADB_DIR = DATA_DIR / "chromadb"
 
 # Scraper
 SITEMAP_URL = "https://docs.dynatrace.com/docs/sitemap.xml"
+WHATS_NEW_PREFIX = "https://docs.dynatrace.com/docs/whats-new"
 CRAWL_DELAY = 1.5  # seconds between page loads
 CRAWL_CONCURRENCY = 3
 

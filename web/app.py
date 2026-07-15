@@ -109,7 +109,7 @@ def _check_admin(token: str):
 
 
 class ScrapeRequest(BaseModel):
-    sources: List[str] = ["docs", "community", "blog", "github"]
+    sources: List[str] = ["docs", "whats-new", "community", "blog", "github"]
     max_pages: Optional[int] = 50
     token: Optional[str] = ""
 
@@ -125,7 +125,7 @@ def _run_scrape_and_index(job_id: str, sources: List[str], max_pages: int):
     from indexer.chunker import chunk_page
     from indexer.embeddings import EmbeddingService
     from indexer.vectorstore import VectorStore
-    from config import SITEMAP_URL, RAW_PAGES_DIR
+    from config import SITEMAP_URL, WHATS_NEW_PREFIX, RAW_PAGES_DIR
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -141,6 +141,14 @@ def _run_scrape_and_index(job_id: str, sources: List[str], max_pages: int):
                 if source == "docs":
                     urls = loop.run_until_complete(fetch_sitemap_urls(SITEMAP_URL))
                     stats = loop.run_until_complete(crawl_urls(urls, max_pages=max_pages))
+                elif source == "whats-new":
+                    urls = loop.run_until_complete(
+                        fetch_sitemap_urls(SITEMAP_URL, prefix=WHATS_NEW_PREFIX)
+                    )
+                    # force=True: release-note pages update in place each sprint
+                    stats = loop.run_until_complete(
+                        crawl_urls(urls, force=True, max_pages=max_pages)
+                    )
                 elif source == "community":
                     urls = loop.run_until_complete(fetch_community_urls(max_urls=max_pages))
                     stats = loop.run_until_complete(crawl_community(urls, max_pages=max_pages))
@@ -187,7 +195,7 @@ def _run_scrape_and_index(job_id: str, sources: List[str], max_pages: int):
 async def scrape(req: ScrapeRequest, background_tasks: BackgroundTasks):
     _check_admin(req.token or "")
 
-    valid_sources = {"docs", "community", "blog", "github"}
+    valid_sources = {"docs", "whats-new", "community", "blog", "github"}
     sources = [s for s in req.sources if s in valid_sources]
     if not sources:
         raise HTTPException(status_code=400, detail=f"No valid sources. Choose from: {valid_sources}")
